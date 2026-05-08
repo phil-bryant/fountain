@@ -1,0 +1,18 @@
+#R001: Ignore generated CMake and local build directories.
+build/
+build-*/
+cmake-build-*/
+
+#R005: Ignore machine-local editor/OS metadata.
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+#R010: Intentionally keep source/config tracked (no ignore entries for include/src/tests/requirements/docs).
+
+#R015: Ignore local scratch and SQLite runtime artifacts.
+tmp/
+*.sqlite3
+*.db

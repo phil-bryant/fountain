@@ -1,0 +1,2 @@
+add_executable(fountain_cpp_basic main.cpp)
+target_link_libraries(fountain_cpp_basic PRIVATE fountain)
