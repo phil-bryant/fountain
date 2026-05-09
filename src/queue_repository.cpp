@@ -128,7 +128,7 @@ std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
         estimated_bytes += candidate_size;
         event_array.push_back(nlohmann::json::parse(payload_json, nullptr, false));
         if (event_array.back().is_discarded()) {
-            event_array.pop_back();
+            event_array.erase(event_array.end() - 1);
             ids.pop_back();
             estimated_bytes -= candidate_size;
         }

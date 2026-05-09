@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(Fountain VERSION 0.1.0 LANGUAGES C CXX)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -23,6 +26,9 @@ if(NOT nlohmann_json_FOUND)
 endif()
 
 find_package(SQLite3 REQUIRED)
+if(NOT TARGET SQLite3::SQLite3 AND TARGET SQLite::SQLite3)
+    add_library(SQLite3::SQLite3 ALIAS SQLite::SQLite3)
+endif()
 
 add_library(fountain STATIC
     src/fountain_c_api.cpp
@@ -46,7 +52,7 @@ target_include_directories(fountain
 target_link_libraries(fountain
     PRIVATE
         nlohmann_json::nlohmann_json
-        SQLite::SQLite3
+        SQLite3::SQLite3
 )
 
 if(FOUNTAIN_BUILD_TESTS)

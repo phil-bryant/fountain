@@ -14,7 +14,7 @@ target_link_libraries(fountain_tests
         GTest::gtest
         GTest::gtest_main
         nlohmann_json::nlohmann_json
-        SQLite::SQLite3
+        SQLite3::SQLite3
 )
 
 include(GoogleTest)
