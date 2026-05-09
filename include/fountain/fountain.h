@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_INCLUDE_FOUNTAIN_H_
+#define FOUNTAIN_INCLUDE_FOUNTAIN_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -8,26 +9,23 @@
 extern "C" {
 #endif
 
-typedef enum FountainLogLevel {
-    FountainLogLevelDebug = 0,
-    FountainLogLevelInfo = 1,
-    FountainLogLevelWarning = 2,
-    FountainLogLevelError = 3,
-    FountainLogLevelFault = 4
-} FountainLogLevel;
+typedef uint8_t FountainLogLevel;
+#define FountainLogLevelDebug ((FountainLogLevel)0u)
+#define FountainLogLevelInfo ((FountainLogLevel)1u)
+#define FountainLogLevelWarning ((FountainLogLevel)2u)
+#define FountainLogLevelError ((FountainLogLevel)3u)
+#define FountainLogLevelFault ((FountainLogLevel)4u)
 
-typedef enum FountainLogPrivacy {
-    FountainLogPrivacyPublic = 0,
-    FountainLogPrivacyPrivate = 1,
-    FountainLogPrivacyForbidden = 2
-} FountainLogPrivacy;
+typedef uint8_t FountainLogPrivacy;
+#define FountainLogPrivacyPublic ((FountainLogPrivacy)0u)
+#define FountainLogPrivacyPrivate ((FountainLogPrivacy)1u)
+#define FountainLogPrivacyForbidden ((FountainLogPrivacy)2u)
 
-typedef enum FountainLogValueType {
-    FountainLogValueString = 0,
-    FountainLogValueInt64 = 1,
-    FountainLogValueDouble = 2,
-    FountainLogValueBool = 3
-} FountainLogValueType;
+typedef uint8_t FountainLogValueType;
+#define FountainLogValueString ((FountainLogValueType)0u)
+#define FountainLogValueInt64 ((FountainLogValueType)1u)
+#define FountainLogValueDouble ((FountainLogValueType)2u)
+#define FountainLogValueBool ((FountainLogValueType)3u)
 
 typedef struct FountainLogField {
     const char *key;
@@ -92,4 +90,5 @@ void FountainRunMaintenance(void);
 
 #ifdef __cplusplus
 }
+#endif
 #endif

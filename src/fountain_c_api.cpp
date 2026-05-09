@@ -18,6 +18,8 @@ char *DupCString(const std::string &value) {
     return buffer;
 }
 
+void HandleApiException() noexcept {}
+
 }  // namespace
 
 extern "C" {
@@ -29,6 +31,7 @@ bool FountainConfigure(const char *database_path) {
         }
         return fountain::GetRuntime().Configure(database_path);
     } catch (...) {
+        HandleApiException();
         return false;
     }
 }
@@ -40,6 +43,7 @@ void FountainSetInstallID(const char *install_id) {
         }
         fountain::GetRuntime().SetInstallId(install_id);
     } catch (...) {
+        HandleApiException();
     }
 }
 
@@ -50,11 +54,12 @@ void FountainSetSessionID(const char *session_id) {
         }
         fountain::GetRuntime().SetSessionId(session_id);
     } catch (...) {
+        HandleApiException();
     }
 }
 
 void FountainSetAppMetadata(
-    const char *bundle_id,
+    const char *bundle_id, // NOLINT(bugprone-easily-swappable-parameters)
     const char *app_version,
     const char *build,
     const char *os_name,
@@ -71,6 +76,7 @@ void FountainSetAppMetadata(
         metadata.arch = arch != nullptr ? arch : "";
         fountain::GetRuntime().SetAppMetadata(metadata);
     } catch (...) {
+        HandleApiException();
     }
 }
 
@@ -94,6 +100,7 @@ void FountainLogEvent(
         }
         fountain::GetRuntime().LogEvent(input);
     } catch (...) {
+        HandleApiException();
     }
 }
 
@@ -121,6 +128,7 @@ bool FountainCreateUploadBatch(const size_t max_events, const size_t max_bytes, 
         }
         return true;
     } catch (...) {
+        HandleApiException();
         return false;
     }
 }
@@ -132,6 +140,7 @@ void FountainMarkUploadBatchSucceeded(const char *batch_id) {
         }
         fountain::GetRuntime().MarkUploadBatchSucceeded(batch_id);
     } catch (...) {
+        HandleApiException();
     }
 }
 
@@ -143,6 +152,7 @@ void FountainMarkUploadBatchFailed(const char *batch_id, const int http_status, 
         const std::string error = error_message != nullptr ? error_message : "";
         fountain::GetRuntime().MarkUploadBatchFailed(batch_id, http_status, error);
     } catch (...) {
+        HandleApiException();
     }
 }
 
@@ -165,6 +175,7 @@ void FountainRunMaintenance(void) {
     try {
         fountain::GetRuntime().RunMaintenance();
     } catch (...) {
+        HandleApiException();
     }
 }
 

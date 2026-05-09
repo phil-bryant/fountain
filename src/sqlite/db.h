@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_SRC_SQLITE_DB_H_
+#define FOUNTAIN_SRC_SQLITE_DB_H_
 
 #include <sqlite3.h>
 
@@ -30,3 +31,4 @@ private:
 };
 
 }  // namespace fountain::sqlite
+#endif

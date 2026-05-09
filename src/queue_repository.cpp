@@ -82,8 +82,8 @@ bool QueueRepository::InsertEvent(
 }
 
 std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
-    const std::size_t max_events,
-    const std::size_t max_bytes,
+    const std::size_t max_events, // NOLINT(bugprone-easily-swappable-parameters)
+    const std::size_t max_bytes, // NOLINT(bugprone-easily-swappable-parameters)
     const std::int64_t now_ms
 ) const {
     if (max_events == 0 || max_bytes == 0) {

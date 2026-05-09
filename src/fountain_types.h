@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_SRC_FOUNTAIN_TYPES_H_
+#define FOUNTAIN_SRC_FOUNTAIN_TYPES_H_
 
 #include <cstdint>
 #include <string>
@@ -50,3 +51,4 @@ struct BatchPayload {
 };
 
 }  // namespace fountain
+#endif

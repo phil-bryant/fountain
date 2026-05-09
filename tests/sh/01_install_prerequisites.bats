@@ -6,7 +6,10 @@ setup() {
   export SCRIPT_PATH="${REPO_ROOT}/01_install_prerequisites.sh"
   export TMP_ROOT
   TMP_ROOT="$(mktemp -d)"
+  export STUB_BREW_PREFIX
+  STUB_BREW_PREFIX="${TMP_ROOT}/homebrew"
   export STUB_BIN="${TMP_ROOT}/bin"
+  mkdir -p "${STUB_BREW_PREFIX}/bin" "${STUB_BREW_PREFIX}/opt/llvm/bin"
   mkdir -p "${STUB_BIN}"
 }
 
@@ -53,9 +56,38 @@ EOF
 create_brew_stub() {
   cat > "${STUB_BIN}/brew" <<'EOF'
 #!/bin/bash
+if [ "$1" = "--prefix" ]; then
+  if [ -z "${2:-}" ]; then
+    printf "%s\n" "${STUB_BREW_PREFIX}"
+    exit 0
+  fi
+  if [ "$2" = "llvm" ]; then
+    printf "%s\n" "${STUB_BREW_PREFIX}/opt/llvm"
+    exit 0
+  fi
+  printf "%s\n" "${STUB_BREW_PREFIX}/opt/$2"
+  exit 0
+fi
 if [ "$1" = "install" ]; then
   FORMULA="$2"
   printf "install %s\n" "${FORMULA}" >> "${BREW_LOG}"
+  if [ "${FORMULA}" = "clang-tools-extra" ]; then
+    cat > "${STUB_BIN}/clang-tidy" <<'INNER'
+#!/bin/bash
+exit 0
+INNER
+    chmod +x "${STUB_BIN}/clang-tidy"
+    exit 0
+  fi
+  if [ "${FORMULA}" = "llvm" ]; then
+    mkdir -p "${STUB_BREW_PREFIX}/opt/llvm/bin"
+    cat > "${STUB_BREW_PREFIX}/opt/llvm/bin/clang-tidy" <<'INNER'
+#!/bin/bash
+exit 0
+INNER
+    chmod +x "${STUB_BREW_PREFIX}/opt/llvm/bin/clang-tidy"
+    exit 0
+  fi
   cat > "${STUB_BIN}/${FORMULA}" <<'INNER'
 #!/bin/bash
 exit 0
@@ -92,7 +124,7 @@ EOF
 @test "R010,R030: fails clearly when Xcode toolchain commands are missing" {
   #R010 #R030
   create_brew_stub
-  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" /bin/bash "${SCRIPT_PATH}"
+  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" STUB_BREW_PREFIX="${STUB_BREW_PREFIX}" /bin/bash "${SCRIPT_PATH}"
   [ "$status" -ne 0 ]
   [[ "${output}" == *"[Xcode Toolchain] xcodebuild not found"* ]]
   [[ "${output}" == *"[Xcode Toolchain] xcrun"* ]]
@@ -103,7 +135,7 @@ EOF
   create_common_toolchain_stubs
   create_brew_stub
 
-  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" bash "${SCRIPT_PATH}"
+  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" STUB_BREW_PREFIX="${STUB_BREW_PREFIX}" bash "${SCRIPT_PATH}"
   [ "$status" -eq 0 ]
   [[ "${output}" == *"[cmake] Checking..."* ]]
   [[ "${output}" == *"[ctest] Available on PATH"* ]]
@@ -119,6 +151,8 @@ EOF
   run rg "^install shellcheck$" "${TMP_ROOT}/brew.log"
   [ "$status" -eq 0 ]
   run rg "^install semgrep$" "${TMP_ROOT}/brew.log"
+  [ "$status" -eq 0 ]
+  run rg "^install clang-tools-extra$" "${TMP_ROOT}/brew.log"
   [ "$status" -eq 0 ]
   run rg "^install gitleaks$" "${TMP_ROOT}/brew.log"
   [ "$status" -eq 0 ]
@@ -148,7 +182,7 @@ fi
 exit 0
 EOF
   chmod +x "${STUB_BIN}/brew"
-  run env PATH="${STUB_BIN}:/bin" STUB_BIN="${STUB_BIN}" BREW_LOG="${TMP_ROOT}/brew.log" bash "${SCRIPT_PATH}"
+  run env PATH="${STUB_BIN}:/bin" STUB_BIN="${STUB_BIN}" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BREW_PREFIX="${STUB_BREW_PREFIX}" bash "${SCRIPT_PATH}"
   [ "$status" -ne 0 ]
   [[ "${output}" == *"[ctest] Missing after cmake installation"* ]]
 }
@@ -158,10 +192,10 @@ EOF
   create_common_toolchain_stubs
   create_brew_stub
 
-  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" bash "${SCRIPT_PATH}"
+  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" STUB_BREW_PREFIX="${STUB_BREW_PREFIX}" bash "${SCRIPT_PATH}"
   [ "$status" -eq 0 ]
 
-  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" bash "${SCRIPT_PATH}"
+  run env PATH="${STUB_BIN}:/bin" BREW_LOG="${TMP_ROOT}/brew.log" STUB_BIN="${STUB_BIN}" STUB_BREW_PREFIX="${STUB_BREW_PREFIX}" bash "${SCRIPT_PATH}"
   [ "$status" -eq 0 ]
 
   run rg "^install cmake$" "${TMP_ROOT}/brew.log" --count
@@ -177,6 +211,9 @@ EOF
   [ "$status" -eq 0 ]
   [ "${output}" = "1" ]
   run rg "^install semgrep$" "${TMP_ROOT}/brew.log" --count
+  [ "$status" -eq 0 ]
+  [ "${output}" = "1" ]
+  run rg "^install clang-tools-extra$" "${TMP_ROOT}/brew.log" --count
   [ "$status" -eq 0 ]
   [ "${output}" = "1" ]
   run rg "^install gitleaks$" "${TMP_ROOT}/brew.log" --count

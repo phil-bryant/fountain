@@ -93,7 +93,41 @@ ensure_sast_tools() {
     #R030: Ensure SAST tools for this repository are available.
     ensure_brew_formula "shellcheck" "shellcheck"
     ensure_brew_formula "semgrep" "semgrep"
+    ensure_clang_tidy
     ensure_brew_formula "gitleaks" "gitleaks"
+}
+
+ensure_clang_tidy() {
+    #R030: Ensure clang-tidy exists for Makefile SAST lanes.
+    local brew_prefix llvm_prefix llvm_tidy
+    echo "[clang-tidy] Checking..."
+    if command -v clang-tidy >/dev/null 2>&1; then
+        echo "✅ [clang-tidy] Available on PATH"
+        return
+    fi
+    echo "⚠️  [clang-tidy] Missing; installing with Homebrew..."
+    if brew install clang-tools-extra; then
+        :
+    else
+        echo "⚠️  [clang-tidy] clang-tools-extra unavailable; falling back to llvm formula..."
+        brew install llvm
+    fi
+    if command -v clang-tidy >/dev/null 2>&1; then
+        echo "✅ [clang-tidy] Installed and available"
+        return
+    fi
+    brew_prefix="$(brew --prefix)"
+    llvm_prefix="$(brew --prefix llvm)"
+    llvm_tidy="${llvm_prefix}/bin/clang-tidy"
+    if [ -x "$llvm_tidy" ]; then
+        ln -sf "$llvm_tidy" "${brew_prefix}/bin/clang-tidy"
+    fi
+    if command -v clang-tidy >/dev/null 2>&1; then
+        echo "✅ [clang-tidy] Linked into ${brew_prefix}/bin/clang-tidy"
+    else
+        echo "❌ [clang-tidy] Install completed but command is still missing"
+        exit 1
+    fi
 }
 
 print_final_guidance() {

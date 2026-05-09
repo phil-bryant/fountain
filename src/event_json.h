@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_SRC_EVENT_JSON_H_
+#define FOUNTAIN_SRC_EVENT_JSON_H_
 
 #include <string>
 
@@ -20,3 +21,4 @@ public:
 std::string LevelToString(FountainLogLevel level);
 
 }  // namespace fountain
+#endif

@@ -18,6 +18,8 @@ std::string LevelToString(const FountainLogLevel level) {
             return "error";
         case FountainLogLevelFault:
             return "fault";
+        default:
+            break;
     }
     return "info";
 }
@@ -46,6 +48,8 @@ std::string EventJson::BuildEventEnvelope(
                 break;
             case FountainLogValueBool:
                 fields[field.key] = field.bool_value;
+                break;
+            default:
                 break;
         }
     }

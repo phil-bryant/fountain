@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_SRC_FOUNTAIN_RUNTIME_H_
+#define FOUNTAIN_SRC_FOUNTAIN_RUNTIME_H_
 
 #include <mutex>
 #include <optional>
@@ -20,7 +21,7 @@ public:
     void SetAppMetadata(const AppMetadata &metadata);
 
     void LogEvent(const EventInput &event);
-    std::optional<BatchPayload> CreateUploadBatch(std::size_t max_events, std::size_t max_bytes);
+    std::optional<BatchPayload> CreateUploadBatch(std::size_t max_events, std::size_t max_bytes); // NOLINT(bugprone-easily-swappable-parameters)
     void MarkUploadBatchSucceeded(const std::string &batch_id);
     void MarkUploadBatchFailed(const std::string &batch_id, int http_status, const std::string &error_message);
     void RunMaintenance();
@@ -39,3 +40,4 @@ FountainRuntime &GetRuntime();
 std::vector<EventField> CopyFields(const FountainLogField *fields, std::size_t field_count);
 
 }  // namespace fountain
+#endif

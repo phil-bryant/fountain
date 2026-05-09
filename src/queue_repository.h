@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FOUNTAIN_SRC_QUEUE_REPOSITORY_H_
+#define FOUNTAIN_SRC_QUEUE_REPOSITORY_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -30,7 +31,7 @@ public:
         std::size_t max_events,
         std::size_t max_bytes,
         std::int64_t now_ms
-    ) const;
+    ) const; // NOLINT(bugprone-easily-swappable-parameters)
 
     void MarkUploadBatchSucceeded(const std::string &batch_id) const;
     void MarkUploadBatchFailed(
@@ -49,3 +50,4 @@ private:
 };
 
 }  // namespace fountain
+#endif

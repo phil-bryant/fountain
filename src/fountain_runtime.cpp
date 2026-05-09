@@ -55,7 +55,7 @@ void FountainRuntime::LogEvent(const EventInput &event) {
     );
 }
 
-std::optional<BatchPayload> FountainRuntime::CreateUploadBatch(const std::size_t max_events, const std::size_t max_bytes) {
+std::optional<BatchPayload> FountainRuntime::CreateUploadBatch(const std::size_t max_events, const std::size_t max_bytes) { // NOLINT(bugprone-easily-swappable-parameters)
     std::lock_guard<std::mutex> lock(mutex_);
     if (!configured_) {
         return std::nullopt;
@@ -121,6 +121,8 @@ std::vector<EventField> CopyFields(const FountainLogField *fields, const std::si
                 break;
             case FountainLogValueBool:
                 dst.bool_value = src.value.bool_value;
+                break;
+            default:
                 break;
         }
         out.push_back(std::move(dst));

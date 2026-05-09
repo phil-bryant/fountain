@@ -37,7 +37,7 @@ Tests:
 - Run without `sqlite3` and `pkg-config` and verify install attempts and command availability checks.
 
 R030  Statement: Ensure SAST tools required by Fountain are available.
-Design: Ensure `shellcheck`, `semgrep`, and `gitleaks` are installed and available via Homebrew helper flow.
+Design: Ensure `shellcheck`, `semgrep`, `clang-tidy`, and `gitleaks` are installed and available via Homebrew helper flow.
 Tests:
 - Run without those tools and verify install attempts.
 - Rerun and verify no redundant installs.
@@ -55,3 +55,4 @@ Tests:
 ## Changelog
 
 - 2026-05-07: Reswizzled copied prerequisites for Fountain C++ workflow and required CMake/CTest setup.
+- 2026-05-09: Added explicit `clang-tidy` prerequisite coverage for Makefile SAST lanes.

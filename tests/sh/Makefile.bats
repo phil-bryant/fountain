@@ -62,7 +62,6 @@ EOF
   [[ "$output" == *"test"* ]]
   [[ "$output" == *"run"* ]]
   [[ "$output" == *"sast"* ]]
-  [[ "$output" == *"sast-report"* ]]
   [[ "$output" == *"clean"* ]]
 }
 
@@ -105,19 +104,20 @@ EOF
   [ "$status" -eq 0 ]
   run rg "^semgrep --config auto --error --quiet \\.$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
-  run rg "^clang-tidy src/.+" "${LOG_FILE}"
+  run rg "^clang-tidy --checks=clang-analyzer-\\*,bugprone-\\*,performance-\\*,portability-\\* src/.+" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^gitleaks detect --source \\. --no-banner --redact --exit-code 1$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
 }
 
-@test "R060,R065: sast-report is non-blocking for clang-tidy failures" {
+@test "R060,R065: sast keeps non-blocking clang-tidy report behavior" {
   #R060 #R065
   create_common_stubs
-  create_stub "clang-tidy" "echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"; exit 2"
-  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast-report
+  create_stub "clang-tidy" "echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"; count_file=\"${TMP_ROOT}/clang_tidy_calls\"; count=0; if [ -f \"\$count_file\" ]; then count=\$(cat \"\$count_file\"); fi; count=\$((count + 1)); echo \"\$count\" > \"\$count_file\"; if [ \"\$count\" -eq 1 ]; then exit 0; fi; exit 2"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Completed non-blocking report lane"* ]]
+  [[ "$output" == *"diagnostics reported"* ]]
+  [[ "$output" == *"extended reporting completed"* ]]
 }
 
 @test "R080: clean moves artifacts into Trash and stays idempotent" {

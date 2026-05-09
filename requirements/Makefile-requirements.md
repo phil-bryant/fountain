@@ -6,7 +6,7 @@ Applies to repository task automation in `Makefile` for consolidated local build
 
 R001  Statement: Expose discoverable consolidated developer entrypoints through a help target.
 Design: `make help` lists supported targets and one-line purpose text for each (`build`, `test`, `run`, `sast`,
-`sast-report`, `clean`).
+`clean`).
 Tests:
 - Run `make help` and verify all documented targets are present with descriptions.
 
@@ -24,7 +24,7 @@ Tests:
 - Force `cmake --build build` to fail and verify `make build` exits non-zero.
 
 R015  Statement: Keep Makefile paths and artifact controls configurable through variables.
-Design: Define variables for build directory, test lanes, SAST tooling commands, and run artifact paths near the file top.
+Design: Define variables for build directory, test lanes, SAST tooling commands/checks, and run artifact paths near the file top.
 Tests:
 - Verify target commands use declared variables instead of repeated hardcoded literals.
 
@@ -57,7 +57,7 @@ Tests:
 
 R050  Statement: Run clang-tidy static analysis across repository C++ sources.
 Design: `_sast_clang_tidy` fails clearly when `clang-tidy` is unavailable; when present, it runs clang-tidy for discovered
-`src/*.cpp` files with repository include paths.
+`src/*.cpp` files with explicit check globs and repository include paths.
 Tests:
 - Run `_sast_clang_tidy` with stubbed clang-tidy and verify C++ source invocation occurs.
 - Remove `clang-tidy` from `PATH` and verify `_sast_clang_tidy` fails non-zero with guidance.
@@ -70,16 +70,16 @@ Tests:
 - Remove `gitleaks` from `PATH` and verify `_sast_secrets` fails non-zero with guidance.
 
 R060  Statement: Expose a non-blocking extended SAST reporting lane.
-Design: `make sast-report` runs `_sast_clang_tidy_report`; report command failures are printed and do not fail the target.
+Design: `make sast` includes `_sast_clang_tidy_report`; report command failures are printed and do not fail the target.
 Tests:
-- Run `make sast-report` and verify completion output is emitted.
-- Force report clang-tidy failure and verify target remains successful.
+- Run `make sast` and verify non-blocking report output is emitted.
+- Force report clang-tidy failure and verify `make sast` remains successful.
 
 R065  Statement: Keep blocking and report-only clang-tidy policy separation explicit.
 Design: `_sast_clang_tidy` is blocking; `_sast_clang_tidy_report` is non-blocking and prints diagnostic context.
 Tests:
 - Verify blocking lane fails on clang-tidy failure.
-- Verify report lane prints failure context but returns success.
+- Verify `make sast` report lane prints failure context while overall target remains successful.
 
 R080  Statement: Remove generated local artifacts through a safe clean target.
 Design: `make clean` moves generated artifacts to timestamped `~/.Trash` recovery locations using `mv`, never `rm`, and returns
@@ -89,7 +89,7 @@ Tests:
 - Run `make clean` repeatedly and verify idempotent success.
 
 R040  Statement: Declare orchestration targets as phony with operator-readable status output.
-Design: `.PHONY` includes `help`, `build`, `test`, `run`, `sast`, `sast-report`, `clean`, and internal SAST helper
+Design: `.PHONY` includes `help`, `build`, `test`, `run`, `sast`, `clean`, and internal SAST helper
 targets; each orchestration target emits concise status lines.
 Tests:
 - Verify all orchestration targets are present in `.PHONY`.
