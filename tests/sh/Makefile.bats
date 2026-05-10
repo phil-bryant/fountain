@@ -95,16 +95,14 @@ EOF
   [[ "$output" == *"Missing executable"* ]]
 }
 
-@test "R030,R035,R045,R050,R055: sast runs all blocking lanes" {
-  #R030 #R035 #R045 #R050 #R055
+@test "R030,R035,R045,R055: sast runs blocking security lanes" {
+  #R030 #R035 #R045 #R055
   create_common_stubs
   run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
   [ "$status" -eq 0 ]
   run rg "^shellcheck 00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^semgrep --config auto --error \\.$" "${LOG_FILE}"
-  [ "$status" -eq 0 ]
-  run rg "^clang-tidy --checks=clang-analyzer-\\*,bugprone-\\*,performance-\\*,portability-\\* src/.+" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^gitleaks detect --source \\. --no-banner --redact --exit-code 1$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
@@ -121,8 +119,6 @@ EOF
   [[ "$output" == *"URL: https://www.shellcheck.net/"* ]]
   [[ "$output" == *"SAST Tool: Semgrep"* ]]
   [[ "$output" == *"URL: https://semgrep.dev/docs/"* ]]
-  [[ "$output" == *"SAST Tool: clang-tidy"* ]]
-  [[ "$output" == *"URL: https://clang.llvm.org/extra/clang-tidy/"* ]]
   [[ "$output" == *"SAST Tool: gitleaks"* ]]
   [[ "$output" == *"URL: https://github.com/gitleaks/gitleaks"* ]]
 }
@@ -201,14 +197,14 @@ exit 0"
   [ "$status" -ne 0 ]
 }
 
-@test "R060,R065: sast keeps non-blocking clang-tidy report behavior" {
+@test "R060,R065: _sast_clang_tidy_report is non-blocking and separate from blocking lane" {
   #R060 #R065
   create_common_stubs
-  create_stub "clang-tidy" "echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"; count_file=\"${TMP_ROOT}/clang_tidy_calls\"; count=0; if [ -f \"\$count_file\" ]; then count=\$(cat \"\$count_file\"); fi; count=\$((count + 1)); echo \"\$count\" > \"\$count_file\"; if [ \"\$count\" -eq 1 ]; then exit 0; fi; exit 2"
-  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
+  create_stub "clang-tidy" "echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"; exit 0"
+  create_stub "awk" "cat; exit 2"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy_report
   [ "$status" -eq 0 ]
   [[ "$output" == *"diagnostics reported"* ]]
-  [[ "$output" == *"extended reporting completed"* ]]
 }
 
 @test "R080: clean moves artifacts into Trash and stays idempotent" {
