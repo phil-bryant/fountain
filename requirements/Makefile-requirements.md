@@ -50,17 +50,59 @@ Tests:
 - Remove `shellcheck` from `PATH` and verify `_sast_shell` fails non-zero with guidance.
 
 R045  Statement: Run Semgrep through a repository SAST lane.
-Design: `_sast_semgrep` fails clearly when `semgrep` is unavailable; otherwise runs `semgrep --config auto --error --quiet .`.
+Design: `_sast_semgrep` fails clearly when `semgrep` is unavailable; otherwise runs `semgrep --config auto --error  .`.
 Tests:
 - Run `_sast_semgrep` with stubbed semgrep and verify expected arguments.
 - Remove `semgrep` from `PATH` and verify `_sast_semgrep` fails non-zero with guidance.
 
-R050  Statement: Run clang-tidy static analysis across repository C++ sources.
-Design: `_sast_clang_tidy` fails clearly when `clang-tidy` is unavailable; when present, it runs clang-tidy for discovered
-`src/*.cpp` files with explicit check globs and repository include paths.
+R046  Statement: Preserve Semgrep findings visibility in SAST output.
+Design: `_sast_semgrep` MUST NOT pass `--quiet` so console output includes scan context and findings summary.
 Tests:
-- Run `_sast_clang_tidy` with stubbed clang-tidy and verify C++ source invocation occurs.
+- Run `_sast_semgrep` with stubbed semgrep and verify invocation does not include `--quiet`.
+- Verify `_sast_semgrep` still includes expected baseline arguments (`--config auto --error .`).
+
+R047  Statement: Print explanatory headers before each SAST tool invocation.
+Design: `make sast` lanes MUST print a bounded ASCII header before each tool run (`shellcheck`, `semgrep`, `clang-tidy`, and
+`gitleaks`) including tool name, a short explainer line, and official documentation URL.
+Tests:
+- Run `make sast` with tool stubs and verify output contains boxed headers for all SAST tools.
+- Verify each boxed header includes both an explainer line and an official URL line.
+
+R050  Statement: Enforce zero-warning clang-tidy policy for first-party C++.
+Design: `_sast_clang_tidy` fails clearly when `clang-tidy` is unavailable; when present, it MUST fail on first-party (`src/`,
+`include/`) clang-tidy warnings without suppression filters and uses explicit check globs plus repository include paths.
+Tests:
+- Run `_sast_clang_tidy` with stubbed first-party warning output and verify the lane exits non-zero.
 - Remove `clang-tidy` from `PATH` and verify `_sast_clang_tidy` fails non-zero with guidance.
+
+R051  Statement: Keep third-party clang-tidy scanning while constraining suppression scope.
+Design: clang-tidy output from third-party paths (for example `build/_deps`) is still scanned and reported, but only
+`portability-*`, `performance-*`, and `bugprone-*` warning families may be suppressed for third-party paths.
+Tests:
+- Run `_sast_clang_tidy` with mixed third-party warning families and verify only portability/performance/bugprone warnings are
+filtered.
+- Verify non-filtered third-party warning families remain visible in clang-tidy output.
+
+R052  Statement: Prohibit broad clang-tidy suppression patterns in SAST lanes.
+Design: Makefile clang-tidy policy MUST NOT use broad suppression patterns that hide all third-party diagnostics; filtering must
+be narrowly scoped to the allowed third-party warning families.
+Tests:
+- Verify Makefile clang-tidy command does not use a broad suppression regex that drops all third-party lines.
+- Verify filtered output logic is anchored to third-party paths plus the three allowed warning families.
+
+R053  Statement: Emit explicit first-party clang-tidy summary in the blocking lane.
+Design: `_sast_clang_tidy` MUST print deterministic summary lines for first-party warning count and first-party suppression
+count (`NOLINT`) so operators do not infer first-party status from global suppression totals.
+Tests:
+- Run `_sast_clang_tidy` with stubbed clang-tidy output and verify summary lines include first-party warning and suppression counts.
+- Verify summary lines are present when counts are zero and when counts are non-zero.
+
+R054  Statement: Reject first-party suppression-based clang-tidy compliance.
+Design: `_sast_clang_tidy` MUST fail when first-party diagnostics are suppressed via `NOLINT` markers, even when first-party
+warning count is otherwise zero.
+Tests:
+- Run `_sast_clang_tidy` with first-party warning lines containing `NOLINT` and verify the lane exits non-zero.
+- Run `_sast_clang_tidy` with only third-party `NOLINT` lines and verify blocking failure does not trigger from those lines alone.
 
 R055  Statement: Run repository secret scanning through gitleaks.
 Design: `_sast_secrets` fails clearly when `gitleaks` is unavailable; when present, it runs
@@ -99,3 +141,4 @@ Tests:
 
 - 2026-05-08: Initial reverse-engineered requirements for Fountain `Makefile` target behavior.
 - 2026-05-08: Mirrored email-style target-family contract and adapted to Fountain CMake/Bats workflow.
+- 2026-05-10: Added clang-tidy proof summary and first-party NOLINT-blocking requirements (R053, R054).

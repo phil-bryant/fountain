@@ -30,7 +30,7 @@ EOF
 }
 
 create_common_stubs() {
-  create_stub "rg" "if [ \"\$1\" = \"--files\" ] && [ \"\$2\" = \"src\" ]; then echo src/stub.cpp; exit 0; fi; echo tests/sh/example.bats; exit 0"
+  create_stub "rg" "if [ \"\$1\" = \"--files\" ] && [ \"\$2\" = \"src\" ]; then echo src/stub.cpp; exit 0; fi; for arg in \"\$@\"; do if [ \"\$arg\" = \"--count\" ]; then echo src/stub.cpp:0; exit 0; fi; done; echo tests/sh/example.bats; exit 0"
   create_stub "cmake" "echo cmake \"\$@\" >> \"${LOG_FILE}\"; exit 0"
   create_stub "ctest" "echo ctest \"\$@\" >> \"${LOG_FILE}\"; exit 0"
   create_stub "bats" "echo bats \"\$@\" >> \"${LOG_FILE}\"; exit 0"
@@ -102,12 +102,103 @@ EOF
   [ "$status" -eq 0 ]
   run rg "^shellcheck 00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
-  run rg "^semgrep --config auto --error --quiet \\.$" "${LOG_FILE}"
+  run rg "^semgrep --config auto --error \\.$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^clang-tidy --checks=clang-analyzer-\\*,bugprone-\\*,performance-\\*,portability-\\* src/.+" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^gitleaks detect --source \\. --no-banner --redact --exit-code 1$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
+}
+
+@test "R047: sast prints boxed explanatory headers for each tool" {
+  #R047
+  create_common_stubs
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"+==============================================================================+"* ]]
+  [[ "$output" == *"SAST Tool: ShellCheck"* ]]
+  [[ "$output" == *"Analyzes shell scripts for correctness and security issues."* ]]
+  [[ "$output" == *"URL: https://www.shellcheck.net/"* ]]
+  [[ "$output" == *"SAST Tool: Semgrep"* ]]
+  [[ "$output" == *"URL: https://semgrep.dev/docs/"* ]]
+  [[ "$output" == *"SAST Tool: clang-tidy"* ]]
+  [[ "$output" == *"URL: https://clang.llvm.org/extra/clang-tidy/"* ]]
+  [[ "$output" == *"SAST Tool: gitleaks"* ]]
+  [[ "$output" == *"URL: https://github.com/gitleaks/gitleaks"* ]]
+}
+
+@test "R050: _sast_clang_tidy fails on first-party warnings without suppression" {
+  #R050
+  create_common_stubs
+  create_stub "clang-tidy" "cat <<'EOF'
+src/example.cpp:10:5: warning: first-party issue [readability-identifier-naming]
+EOF
+echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"
+exit 0"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"src/example.cpp"* ]]
+}
+
+@test "R053: _sast_clang_tidy prints explicit first-party summary counts" {
+  #R053
+  create_common_stubs
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"first-party warning count: 0"* ]]
+  [[ "$output" == *"first-party NOLINT count: 0"* ]]
+}
+
+@test "R054: _sast_clang_tidy fails when first-party NOLINT markers are present" {
+  #R054
+  create_common_stubs
+  create_stub "rg" "if [ \"\$1\" = \"--files\" ] && [ \"\$2\" = \"src\" ]; then echo src/stub.cpp; exit 0; fi; for arg in \"\$@\"; do if [ \"\$arg\" = \"--count\" ]; then echo src/stub.cpp:1; exit 0; fi; done; echo tests/sh/example.bats; exit 0"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"first-party NOLINT count: 1"* ]]
+}
+
+@test "R054: third-party NOLINT output does not fail blocking lane when first-party counts are clean" {
+  #R054
+  create_common_stubs
+  create_stub "clang-tidy" "cat <<'EOF'
+build/_deps/lib.hpp:2:1: warning: third-party issue [readability-identifier-naming] // NOLINT
+EOF
+echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"
+exit 0"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"third-party issue"* ]]
+  [[ "$output" == *"first-party warning count: 0"* ]]
+  [[ "$output" == *"first-party NOLINT count: 0"* ]]
+}
+
+@test "R051,R052: third-party filtering is limited to portability/performance/bugprone" {
+  #R051 #R052
+  create_common_stubs
+  create_stub "clang-tidy" "cat <<'EOF'
+build/_deps/lib.hpp:1:1: warning: portability issue [portability-simd-intrinsics]
+build/_deps/lib.hpp:2:1: warning: bugprone issue [bugprone-sizeof-expression]
+build/_deps/lib.hpp:3:1: warning: readability issue [readability-identifier-naming]
+EOF
+echo clang-tidy \"\$@\" >> \"${LOG_FILE}\"
+exit 0"
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_clang_tidy_report
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"portability issue"* ]]
+  [[ "$output" != *"bugprone issue"* ]]
+  [[ "$output" == *"readability issue"* ]]
+}
+
+@test "R046: _sast_semgrep does not pass --quiet" {
+  #R046
+  create_common_stubs
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_semgrep
+  [ "$status" -eq 0 ]
+  run rg "^semgrep --config auto --error \\.$" "${LOG_FILE}"
+  [ "$status" -eq 0 ]
+  run rg -- "--quiet" "${LOG_FILE}"
+  [ "$status" -ne 0 ]
 }
 
 @test "R060,R065: sast keeps non-blocking clang-tidy report behavior" {
