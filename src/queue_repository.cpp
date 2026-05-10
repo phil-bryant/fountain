@@ -81,12 +81,8 @@ bool QueueRepository::InsertEvent(
            !stmt.Step() && stmt.Done();
 }
 
-std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
-    const std::size_t max_events, // NOLINT(bugprone-easily-swappable-parameters)
-    const std::size_t max_bytes, // NOLINT(bugprone-easily-swappable-parameters)
-    const std::int64_t now_ms
-) const {
-    if (max_events == 0 || max_bytes == 0) {
+std::optional<BatchPayload> QueueRepository::CreateUploadBatch(const UploadBatchLimits limits, const std::int64_t now_ms) const {
+    if (limits.max_events() == 0 || limits.max_bytes() == 0) {
         return std::nullopt;
     }
 
@@ -109,7 +105,7 @@ std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
     std::size_t estimated_bytes = 0;
 
     while (query.Step()) {
-        if (ids.size() >= max_events) {
+        if (ids.size() >= limits.max_events()) {
             break;
         }
 
@@ -117,10 +113,10 @@ std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
         const auto payload_json = query.ColumnText(1);
         const std::size_t candidate_size = payload_json.size();
 
-        if (!ids.empty() && estimated_bytes + candidate_size > max_bytes) {
+        if (!ids.empty() && estimated_bytes + candidate_size > limits.max_bytes()) {
             break;
         }
-        if (ids.empty() && candidate_size > max_bytes) {
+        if (ids.empty() && candidate_size > limits.max_bytes()) {
             continue;
         }
 
@@ -147,7 +143,7 @@ std::optional<BatchPayload> QueueRepository::CreateUploadBatch(
     };
     std::string payload = batch.dump();
 
-    while (!ids.empty() && payload.size() > max_bytes) {
+    while (!ids.empty() && payload.size() > limits.max_bytes()) {
         ids.pop_back();
         event_array.erase(event_array.end() - 1);
         batch["events"] = event_array;

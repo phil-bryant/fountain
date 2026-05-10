@@ -64,7 +64,7 @@ Key functions in `fountain.h`:
 - `FountainConfigure(database_path)`
 - `FountainSetInstallID(install_id)`
 - `FountainSetSessionID(session_id)`
-- `FountainSetAppMetadata(bundle_id, app_version, build, os_name, os_version, arch)`
+- `FountainSetAppMetadata(metadata_ptr)`
 - `FountainLogEvent(level, event_name, component, fields, field_count)`
 - `FountainCreateUploadBatch(max_events, max_bytes, out_batch)`
 - `FountainMarkUploadBatchSucceeded(batch_id)`

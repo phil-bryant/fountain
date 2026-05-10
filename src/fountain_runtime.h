@@ -21,7 +21,7 @@ public:
     void SetAppMetadata(const AppMetadata &metadata);
 
     void LogEvent(const EventInput &event);
-    std::optional<BatchPayload> CreateUploadBatch(std::size_t max_events, std::size_t max_bytes); // NOLINT(bugprone-easily-swappable-parameters)
+    std::optional<BatchPayload> CreateUploadBatch(UploadBatchLimits limits);
     void MarkUploadBatchSucceeded(const std::string &batch_id);
     void MarkUploadBatchFailed(const std::string &batch_id, int http_status, const std::string &error_message);
     void RunMaintenance();

@@ -139,7 +139,8 @@ TEST(FountainBatchTests, RejectsOversizedEventPayload) {
     const auto db_path = TestDbPath("fountain_big");
     RemoveFileIfExists(db_path);
     ASSERT_TRUE(FountainConfigure(db_path.c_str()));
-    FountainSetAppMetadata("com.example.app", "1.0", "1", "macOS", "15.5", "arm64");
+    const FountainAppMetadata app_metadata = {"com.example.app", "1.0", "1", "macOS", "15.5", "arm64"};
+    FountainSetAppMetadata(&app_metadata);
     FountainSetInstallID("install");
     FountainSetSessionID("session");
 

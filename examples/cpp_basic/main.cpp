@@ -10,7 +10,8 @@ int main() {
 
     FountainSetInstallID("install-id-123");
     FountainSetSessionID("session-id-123");
-    FountainSetAppMetadata("com.example.app", "1.0.0", "1", "macOS", "15.5", "arm64");
+    const FountainAppMetadata app_metadata = {"com.example.app", "1.0.0", "1", "macOS", "15.5", "arm64"};
+    FountainSetAppMetadata(&app_metadata);
 
     FountainLogField fields[2] {};
     fields[0].key = "format";

@@ -12,7 +12,8 @@ TEST(FountainJsonTests, PersistsExpectedEnvelopeShape) {
     ASSERT_TRUE(FountainConfigure(db_path.c_str()));
     FountainSetInstallID("install-xyz");
     FountainSetSessionID("session-abc");
-    FountainSetAppMetadata("com.example.app", "1.8.3", "1842", "macOS", "15.5", "arm64");
+    const FountainAppMetadata app_metadata = {"com.example.app", "1.8.3", "1842", "macOS", "15.5", "arm64"};
+    FountainSetAppMetadata(&app_metadata);
 
     FountainLogField field {};
     field.key = "duration_ms";

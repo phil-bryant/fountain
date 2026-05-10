@@ -8,7 +8,7 @@ Fountain exposes a plain C ABI in `include/fountain/fountain.h`, which Swift can
 2. Set identity and app metadata with:
    - `FountainSetInstallID`
    - `FountainSetSessionID`
-   - `FountainSetAppMetadata`
+   - `FountainSetAppMetadata` (pass pointer to `FountainAppMetadata`)
 3. Log events with `FountainLogEvent`.
 4. In uploader code (Piston), call:
    - `FountainCreateUploadBatch`

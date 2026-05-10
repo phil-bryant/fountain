@@ -46,19 +46,21 @@ typedef struct FountainUploadBatch {
     size_t json_payload_length;
 } FountainUploadBatch;
 
+typedef struct FountainAppMetadata {
+    const char *bundle_id;
+    const char *app_version;
+    const char *build;
+    const char *os_name;
+    const char *os_version;
+    const char *arch;
+} FountainAppMetadata;
+
 // Configures Fountain with a SQLite database path. Returns false on failure.
 bool FountainConfigure(const char *database_path);
 
 void FountainSetInstallID(const char *install_id);
 void FountainSetSessionID(const char *session_id);
-void FountainSetAppMetadata(
-    const char *bundle_id,
-    const char *app_version,
-    const char *build,
-    const char *os_name,
-    const char *os_version,
-    const char *arch
-);
+void FountainSetAppMetadata(const FountainAppMetadata *metadata);
 
 // Logs one event. Never throws and never crashes caller.
 void FountainLogEvent(

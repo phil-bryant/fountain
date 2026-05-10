@@ -55,13 +55,16 @@ void FountainRuntime::LogEvent(const EventInput &event) {
     );
 }
 
-std::optional<BatchPayload> FountainRuntime::CreateUploadBatch(const std::size_t max_events, const std::size_t max_bytes) { // NOLINT(bugprone-easily-swappable-parameters)
+std::optional<BatchPayload> FountainRuntime::CreateUploadBatch(const UploadBatchLimits limits) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!configured_) {
         return std::nullopt;
     }
-    const auto bounded_max_bytes = std::min(max_bytes, kDefaultMaxBatchPayloadBytes);
-    return repository_.CreateUploadBatch(max_events, bounded_max_bytes, NowMs());
+    const auto bounded_limits = UploadBatchLimits(
+        MaxEventCount(limits.max_events()),
+        MaxBatchBytes(std::min(limits.max_bytes(), kDefaultMaxBatchPayloadBytes))
+    );
+    return repository_.CreateUploadBatch(bounded_limits, NowMs());
 }
 
 void FountainRuntime::MarkUploadBatchSucceeded(const std::string &batch_id) {
