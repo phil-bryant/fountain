@@ -11,6 +11,36 @@
 
 namespace fountain {
 
+class MaxEventCount {
+public:
+    explicit MaxEventCount(std::size_t value) : value_(value) {}
+    [[nodiscard]] std::size_t value() const { return value_; }
+
+private:
+    std::size_t value_;
+};
+
+class MaxBatchBytes {
+public:
+    explicit MaxBatchBytes(std::size_t value) : value_(value) {}
+    [[nodiscard]] std::size_t value() const { return value_; }
+
+private:
+    std::size_t value_;
+};
+
+class UploadBatchLimits {
+public:
+    UploadBatchLimits(MaxEventCount max_events, MaxBatchBytes max_bytes)
+        : max_events_(max_events.value()), max_bytes_(max_bytes.value()) {}
+    [[nodiscard]] std::size_t max_events() const { return max_events_; }
+    [[nodiscard]] std::size_t max_bytes() const { return max_bytes_; }
+
+private:
+    std::size_t max_events_;
+    std::size_t max_bytes_;
+};
+
 class QueueRepository {
 public:
     QueueRepository() = default;
@@ -27,11 +57,7 @@ public:
         const std::string &payload_json
     ) const;
 
-    std::optional<BatchPayload> CreateUploadBatch(
-        std::size_t max_events,
-        std::size_t max_bytes,
-        std::int64_t now_ms
-    ) const; // NOLINT(bugprone-easily-swappable-parameters)
+    std::optional<BatchPayload> CreateUploadBatch(UploadBatchLimits limits, std::int64_t now_ms) const;
 
     void MarkUploadBatchSucceeded(const std::string &batch_id) const;
     void MarkUploadBatchFailed(

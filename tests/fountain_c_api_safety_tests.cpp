@@ -7,7 +7,7 @@ TEST(FountainCApiSafetyTests, NullInputSafetyDoesNotCrashAndReturnsFalseWhenAppl
     EXPECT_FALSE(FountainConfigure(nullptr));
     FountainSetInstallID(nullptr);
     FountainSetSessionID(nullptr);
-    FountainSetAppMetadata(nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    FountainSetAppMetadata(nullptr);
 
     FountainLogEvent(FountainLogLevelInfo, nullptr, "component", nullptr, 0);
     FountainLogEvent(FountainLogLevelInfo, "event", nullptr, nullptr, 0);

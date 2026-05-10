@@ -12,7 +12,8 @@ TEST(FountainPrivacyTests, FiltersPrivateAndForbiddenFields) {
     ASSERT_TRUE(FountainConfigure(db_path.c_str()));
     FountainSetInstallID("install-1");
     FountainSetSessionID("session-1");
-    FountainSetAppMetadata("com.example.app", "1.0.0", "1", "macOS", "15.5", "arm64");
+    const FountainAppMetadata app_metadata = {"com.example.app", "1.0.0", "1", "macOS", "15.5", "arm64"};
+    FountainSetAppMetadata(&app_metadata);
 
     FountainLogField fields[5] = {};
     fields[0].key = "format";

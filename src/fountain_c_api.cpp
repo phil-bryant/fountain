@@ -58,23 +58,20 @@ void FountainSetSessionID(const char *session_id) {
     }
 }
 
-void FountainSetAppMetadata(
-    const char *bundle_id, // NOLINT(bugprone-easily-swappable-parameters)
-    const char *app_version,
-    const char *build,
-    const char *os_name,
-    const char *os_version,
-    const char *arch
-) {
+void FountainSetAppMetadata(const FountainAppMetadata *metadata_input) {
     try {
-        fountain::AppMetadata metadata;
-        metadata.bundle_id = bundle_id != nullptr ? bundle_id : "";
-        metadata.app_version = app_version != nullptr ? app_version : "";
-        metadata.build = build != nullptr ? build : "";
-        metadata.os_name = os_name != nullptr ? os_name : "";
-        metadata.os_version = os_version != nullptr ? os_version : "";
-        metadata.arch = arch != nullptr ? arch : "";
-        fountain::GetRuntime().SetAppMetadata(metadata);
+        fountain::AppMetadata app_metadata;
+        if (metadata_input == nullptr) {
+            fountain::GetRuntime().SetAppMetadata(app_metadata);
+            return;
+        }
+        app_metadata.bundle_id = metadata_input->bundle_id != nullptr ? metadata_input->bundle_id : "";
+        app_metadata.app_version = metadata_input->app_version != nullptr ? metadata_input->app_version : "";
+        app_metadata.build = metadata_input->build != nullptr ? metadata_input->build : "";
+        app_metadata.os_name = metadata_input->os_name != nullptr ? metadata_input->os_name : "";
+        app_metadata.os_version = metadata_input->os_version != nullptr ? metadata_input->os_version : "";
+        app_metadata.arch = metadata_input->arch != nullptr ? metadata_input->arch : "";
+        fountain::GetRuntime().SetAppMetadata(app_metadata);
     } catch (...) {
         HandleApiException();
     }
@@ -113,7 +110,8 @@ bool FountainCreateUploadBatch(const size_t max_events, const size_t max_bytes, 
         out_batch->json_payload = nullptr;
         out_batch->json_payload_length = 0;
 
-        auto batch = fountain::GetRuntime().CreateUploadBatch(max_events, max_bytes);
+        const auto limits = fountain::UploadBatchLimits(fountain::MaxEventCount(max_events), fountain::MaxBatchBytes(max_bytes));
+        auto batch = fountain::GetRuntime().CreateUploadBatch(limits);
         if (!batch.has_value()) {
             return false;
         }
