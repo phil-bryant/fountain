@@ -6,6 +6,7 @@ CLANG_TIDY_CMD ?= clang-tidy
 CLANG_TIDY_CHECKS ?= clang-analyzer-*,bugprone-*,performance-*,portability-*
 CLANG_TIDY_FIRST_PARTY_PATH_REGEX ?= (^src/|^include/|$(CURDIR)/src/|$(CURDIR)/include/)
 CLANG_TIDY_THIRD_PARTY_PATH_REGEX ?= build/_deps/
+TOOL_KIND ?= SAST
 SAST_CLANG_TIDY_PER_FILE ?= 1
 GITLEAKS_CMD ?= gitleaks
 SHELLCHECK_CMD ?= shellcheck
@@ -27,8 +28,13 @@ help:
 	@echo "  clean        Move generated artifacts to Trash"
 #R030: Lint lane aggregates blocking code-quality checks.
 #R040: Lint lane emits concise status output.
-lint: _sast_clang_tidy
-	@echo "[lint] Blocking clang-tidy checks passed"
+lint:
+	@if $(MAKE) _sast_clang_tidy; then \
+	  echo "[lint] ✅ PASS: blocking clang-tidy checks passed"; \
+	else \
+	  echo "[lint] ❌ FAIL: blocking clang-tidy checks failed"; \
+	  exit 1; \
+	fi
 
 #R010: Build lane runs deterministic CMake configure/build sequence.
 #R015: Build lane uses configurable top-level variables.
@@ -109,14 +115,14 @@ _sast_semgrep:
 #R065: Blocking lane remains separate from report-only behavior.
 #R047: SAST lane prints explanatory header before tool execution.
 _sast_clang_tidy:
-	@$(MAKE) _sast_tool_header TOOL_NAME="clang-tidy" TOOL_DESC="Performs static analysis and linting for C++ sources." TOOL_URL="https://clang.llvm.org/extra/clang-tidy/"
-	@echo "[sast:clang-tidy] Running blocking clang-tidy checks"
+	@$(MAKE) _sast_tool_header TOOL_KIND="Lint" TOOL_NAME="clang-tidy" TOOL_DESC="Performs static analysis and linting for C++ sources." TOOL_URL="https://clang.llvm.org/extra/clang-tidy/"
+	@echo "[lint:clang-tidy] Running blocking clang-tidy checks"
 	@if ! command -v "$(CLANG_TIDY_CMD)" >/dev/null; then \
-	  echo "[sast:clang-tidy] clang-tidy missing; install and retry"; \
+	  echo "[lint:clang-tidy] clang-tidy missing; install and retry"; \
 	  exit 1; \
 	fi
 	@if [ -z "$(CPP_SOURCES)" ]; then \
-	  echo "[sast:clang-tidy] No C++ sources discovered"; \
+	  echo "[lint:clang-tidy] No C++ sources discovered"; \
 	else \
 	  $(MAKE) _sast_prepare_compile_db; \
 	  first_party_nolint_count=$$(rg --glob '*.cpp' --glob '*.h' --glob '*.hpp' --glob '*.cxx' --glob '*.cc' --glob '*.c' "NOLINT" src include --count | awk -F: '{sum += $$NF} END {print sum + 0}'); \
@@ -124,16 +130,17 @@ _sast_clang_tidy:
 	    first_party_warning_count=0; \
 	    third_party_warning_count=0; \
 	    for cpp_file in $(CPP_SOURCES); do \
-	      echo "[sast:clang-tidy] Processing file $$cpp_file (per-file mode)"; \
+	      echo "[lint:clang-tidy] Processing file $$cpp_file (per-file mode)"; \
 	      per_file_summary=$$($(CLANG_TIDY_CMD) --checks="$(CLANG_TIDY_CHECKS)" "$$cpp_file" -- -Iinclude -Isrc -I"$(BUILD_DIR)/_deps/nlohmann_json-src/include" 2>&1 | \
 	        awk -v first_party_path="$(CLANG_TIDY_FIRST_PARTY_PATH_REGEX)" \
 	            -v third_party_path="$(CLANG_TIDY_THIRD_PARTY_PATH_REGEX)" \
 	            'BEGIN { first_party = 0; third_party = 0; } \
-	             { is_warning = ($$0 ~ / warning: /); \
-	               is_first_party = (is_warning && $$0 ~ first_party_path); \
+	             { is_warning = ($$0 ~ /: warning: /); \
+	               is_diagnostic = ($$0 ~ /: (warning|error|note): /); \
+	               is_first_party = ($$0 ~ first_party_path); \
 	               is_third_party = (is_warning && !is_first_party); \
-	               is_suppressed_third_party = (is_warning && $$0 ~ third_party_path && $$0 ~ /\[(portability|performance|bugprone)-/); \
-	               if (!is_suppressed_third_party) print $$0 > "/dev/stderr"; \
+	               is_printable = (is_diagnostic && is_first_party); \
+	               if (is_printable) print $$0 > "/dev/stderr"; \
 	               if (is_first_party) first_party += 1; \
 	               if (is_third_party) third_party += 1; } \
 	             END { print first_party "," third_party; }'); \
@@ -141,11 +148,11 @@ _sast_clang_tidy:
 	      per_file_third_party=$$(echo "$$per_file_summary" | awk -F, '{print $$2 + 0}'); \
 	      first_party_warning_count=$$((first_party_warning_count + per_file_first_party)); \
 	      third_party_warning_count=$$((third_party_warning_count + per_file_third_party)); \
-	      echo "[sast:clang-tidy] cumulative warnings after $$cpp_file: first-party=$$first_party_warning_count, third-party=$$third_party_warning_count"; \
+	      echo "[lint:clang-tidy] cumulative warnings after $$cpp_file: first-party=$$first_party_warning_count, third-party=$$third_party_warning_count"; \
 	    done; \
-	    echo "[sast:clang-tidy] first-party warning count: $$first_party_warning_count"; \
-	    echo "[sast:clang-tidy] third-party warning count: $$third_party_warning_count"; \
-	    echo "[sast:clang-tidy] first-party NOLINT count: $$first_party_nolint_count"; \
+	    echo "[lint:clang-tidy] first-party warning count: $$first_party_warning_count"; \
+	    echo "[lint:clang-tidy] third-party warning count: $$third_party_warning_count"; \
+	    echo "[lint:clang-tidy] first-party NOLINT count: $$first_party_nolint_count"; \
 	    if [ "$$first_party_warning_count" -gt 0 ] || [ "$$first_party_nolint_count" -gt 0 ]; then exit 2; fi; \
 	  else \
 	    "$(CLANG_TIDY_CMD)" --checks="$(CLANG_TIDY_CHECKS)" $(CPP_SOURCES) -- -Iinclude -Isrc -I"$(BUILD_DIR)/_deps/nlohmann_json-src/include" | \
@@ -153,14 +160,14 @@ _sast_clang_tidy:
 	          -v third_party_path="$(CLANG_TIDY_THIRD_PARTY_PATH_REGEX)" \
 	          -v first_party_nolint_count="$$first_party_nolint_count" \
 	          'BEGIN { first_party_warning_count = 0 } \
-	           { is_warning = ($$0 ~ / warning: /); \
-	             is_third_party = ($$0 ~ third_party_path); \
+	           { is_warning = ($$0 ~ /: warning: /); \
+	             is_diagnostic = ($$0 ~ /: (warning|error|note): /); \
 	             is_first_party = ($$0 ~ first_party_path); \
-	             is_suppressed_third_party = (is_warning && is_third_party && $$0 ~ /\[(portability|performance|bugprone)-/); \
-	             if (!is_suppressed_third_party) print $$0; \
+	             is_printable = (is_diagnostic && is_first_party); \
+	             if (is_printable) print $$0; \
 	             if (is_warning && is_first_party) first_party_warning_count += 1; } \
-	           END { print "[sast:clang-tidy] first-party warning count: " first_party_warning_count; \
-	                 print "[sast:clang-tidy] first-party NOLINT count: " first_party_nolint_count; \
+	           END { print "[lint:clang-tidy] first-party warning count: " first_party_warning_count; \
+	                 print "[lint:clang-tidy] first-party NOLINT count: " first_party_nolint_count; \
 	                 exit (first_party_warning_count > 0 || first_party_nolint_count > 0) ? 2 : 0; }'; \
 	  fi; \
 	fi
@@ -188,7 +195,7 @@ _sast_clang_tidy_report:
 	fi
 
 _sast_prepare_compile_db:
-	@echo "[sast:clang-tidy] Preparing CMake compile database in $(BUILD_DIR)"
+	@echo "[lint:clang-tidy] Preparing CMake compile database in $(BUILD_DIR)"
 	cmake -S . -B "$(BUILD_DIR)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFOUNTAIN_BUILD_TESTS=OFF -DFOUNTAIN_BUILD_EXAMPLES=OFF
 
 #R055: Secrets lane runs gitleaks detection.
@@ -204,7 +211,7 @@ _sast_secrets:
 
 _sast_tool_header:
 	@printf '%s\n' "+==============================================================================+"
-	@printf '%s\n' "| SAST Tool: $(TOOL_NAME)"
+	@printf '%s\n' "| $(TOOL_KIND) Tool: $(TOOL_NAME)"
 	@printf '%s\n' "| $(TOOL_DESC)"
 	@printf '%s\n' "| URL: $(TOOL_URL)"
 	@printf '%s\n' "+==============================================================================+"
