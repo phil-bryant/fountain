@@ -1,2 +1,5 @@
 add_executable(fountain_cpp_basic main.cpp)
 target_link_libraries(fountain_cpp_basic PRIVATE fountain)
+
+add_executable(fountain_heartbeat_runner heartbeat_runner.cpp)
+target_link_libraries(fountain_heartbeat_runner PRIVATE fountain)

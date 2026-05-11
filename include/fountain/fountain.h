@@ -55,6 +55,13 @@ typedef struct FountainAppMetadata {
     const char *arch;
 } FountainAppMetadata;
 
+typedef struct FountainHeartbeatConfig {
+    uint32_t interval_seconds;
+    const char *event_name;
+    const char *component;
+    const char *target_install_id;
+} FountainHeartbeatConfig;
+
 // Configures Fountain with a SQLite database path. Returns false on failure.
 bool FountainConfigure(const char *database_path);
 
@@ -89,6 +96,15 @@ void FountainMarkUploadBatchFailed(
 void FountainFreeUploadBatch(FountainUploadBatch *batch);
 
 void FountainRunMaintenance(void);
+
+// Starts a background heartbeat generator. Returns true when scheduled.
+// - interval_seconds: heartbeat cadence; 0 uses default 900 seconds.
+// - event_name/component: optional; defaults to "fountain.heartbeat"/"fountain.runtime".
+// - target_install_id: optional rollout gate. When set, only emits if install_id matches.
+bool FountainStartHeartbeat(const FountainHeartbeatConfig *config);
+
+// Stops the background heartbeat generator.
+void FountainStopHeartbeat(void);
 
 #ifdef __cplusplus
 }

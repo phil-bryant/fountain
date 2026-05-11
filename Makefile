@@ -10,7 +10,7 @@ TOOL_KIND ?= SAST
 SAST_CLANG_TIDY_PER_FILE ?= 1
 GITLEAKS_CMD ?= gitleaks
 SHELLCHECK_CMD ?= shellcheck
-SHELL_SOURCES := 00_verify_requirements_traceability.sh 01_install_prerequisites.sh
+SHELL_SOURCES := 00_verify_requirements_traceability.sh 01_install_prerequisites.sh 02_start_heartbeat.sh 03_verify_heartbeat.sh 04_stop_heartbeat.sh
 CPP_SOURCES := $(shell rg --files src --glob '*.cpp')
 CLEAN_PATHS := $(BUILD_DIR) .build CMakeCache.txt CMakeFiles
 

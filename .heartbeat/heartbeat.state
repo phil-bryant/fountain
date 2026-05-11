@@ -1,0 +1,9 @@
+heartbeat_enabled=0
+heartbeat_interval_seconds=900
+heartbeat_event_name=fountain.heartbeat
+heartbeat_component=fountain.runtime
+heartbeat_target_install_id=cred_guesjzqoaqmmw265r44l24scku
+heartbeat_pid_file=.heartbeat/heartbeat.pid
+heartbeat_database_path=.heartbeat/heartbeat.sqlite3
+heartbeat_started_at_utc=2026-05-11T06:55:08Z
+heartbeat_stopped_at_utc=2026-05-11T06:55:29Z

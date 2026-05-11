@@ -6,6 +6,10 @@
 
 namespace fountain {
 
+FountainRuntime::~FountainRuntime() {
+    StopHeartbeat();
+}
+
 bool FountainRuntime::Configure(const std::string &database_path) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (database_path.empty()) {
@@ -36,6 +40,10 @@ void FountainRuntime::SetAppMetadata(const AppMetadata &metadata) {
 
 void FountainRuntime::LogEvent(const EventInput &event) {
     std::lock_guard<std::mutex> lock(mutex_);
+    LogEventLocked(event);
+}
+
+void FountainRuntime::LogEventLocked(const EventInput &event) {
     if (!configured_) {
         return;
     }
@@ -93,6 +101,88 @@ void FountainRuntime::RunMaintenance() {
         return;
     }
     repository_.RunMaintenance(NowMs());
+}
+
+bool FountainRuntime::StartHeartbeat(
+    std::chrono::seconds interval,
+    const std::string &event_name,
+    const std::string &component,
+    const std::string &target_install_id
+) {
+    bool started = false;
+    std::chrono::seconds bounded_interval = interval;
+    if (bounded_interval.count() <= 0) {
+        bounded_interval = std::chrono::seconds(900);
+    }
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        const bool can_start = !heartbeat_running_;
+        if (can_start) {
+            heartbeat_interval_ = bounded_interval;
+            heartbeat_event_name_ = event_name;
+            heartbeat_component_ = component;
+            heartbeat_target_install_id_ = target_install_id;
+            heartbeat_running_ = true;
+            started = true;
+        }
+    }
+    if (started) {
+        try {
+            heartbeat_thread_ = std::thread(&FountainRuntime::HeartbeatLoop, this);
+        } catch (...) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            heartbeat_running_ = false;
+            throw;
+        }
+    }
+    return started;
+}
+
+void FountainRuntime::StopHeartbeat() {
+    std::thread thread_to_join;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (heartbeat_running_) {
+            heartbeat_running_ = false;
+            heartbeat_cv_.notify_all();
+            thread_to_join = std::move(heartbeat_thread_);
+        } else if (heartbeat_thread_.joinable()) {
+            thread_to_join = std::move(heartbeat_thread_);
+        }
+    }
+    if (thread_to_join.joinable()) {
+        thread_to_join.join();
+    }
+}
+
+void FountainRuntime::HeartbeatLoop() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    bool keep_running = heartbeat_running_;
+    while (keep_running) {
+        const auto interval = heartbeat_interval_;
+        const bool stop_signaled = heartbeat_cv_.wait_for(lock, interval, [this] { return !heartbeat_running_; });
+        const bool should_emit = !stop_signaled && heartbeat_running_;
+        if (should_emit) {
+            bool rollout_match = heartbeat_target_install_id_.empty();
+            if (!rollout_match) {
+                rollout_match = !identity_.install_id.empty() && identity_.install_id == heartbeat_target_install_id_;
+            }
+            if (configured_ && rollout_match) {
+                EventInput heartbeat_event;
+                heartbeat_event.level = FountainLogLevelInfo;
+                heartbeat_event.event_name = heartbeat_event_name_;
+                heartbeat_event.component = heartbeat_component_;
+                EventField interval_field;
+                interval_field.key = "interval_seconds";
+                interval_field.privacy = FountainLogPrivacyPublic;
+                interval_field.type = FountainLogValueInt64;
+                interval_field.int64_value = static_cast<std::int64_t>(heartbeat_interval_.count());
+                heartbeat_event.fields.push_back(std::move(interval_field));
+                LogEventLocked(heartbeat_event);
+            }
+        }
+        keep_running = heartbeat_running_;
+    }
 }
 
 FountainRuntime &GetRuntime() {

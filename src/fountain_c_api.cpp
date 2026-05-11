@@ -1,5 +1,6 @@
 #include "fountain/fountain.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <new>
@@ -8,6 +9,10 @@
 #include "fountain_runtime.h"
 
 namespace {
+
+constexpr uint32_t kDefaultHeartbeatIntervalSeconds = 900u;
+constexpr const char *kDefaultHeartbeatEventName = "fountain.heartbeat";
+constexpr const char *kDefaultHeartbeatComponent = "fountain.runtime";
 
 char *DupCString(const std::string &value) {
     char *buffer = static_cast<char *>(std::malloc(value.size() + 1));
@@ -172,6 +177,47 @@ void FountainFreeUploadBatch(FountainUploadBatch *batch) {
 void FountainRunMaintenance(void) {
     try {
         fountain::GetRuntime().RunMaintenance();
+    } catch (...) {
+        HandleApiException();
+    }
+}
+
+bool FountainStartHeartbeat(const FountainHeartbeatConfig *config) {
+    bool started = false;
+    try {
+        uint32_t interval_seconds = kDefaultHeartbeatIntervalSeconds;
+        std::string event_name = kDefaultHeartbeatEventName;
+        std::string component = kDefaultHeartbeatComponent;
+        std::string target_install_id;
+        if (config != nullptr) {
+            if (config->interval_seconds > 0) {
+                interval_seconds = config->interval_seconds;
+            }
+            if (config->event_name != nullptr && config->event_name[0] != '\0') {
+                event_name = config->event_name;
+            }
+            if (config->component != nullptr && config->component[0] != '\0') {
+                component = config->component;
+            }
+            if (config->target_install_id != nullptr && config->target_install_id[0] != '\0') {
+                target_install_id = config->target_install_id;
+            }
+        }
+        started = fountain::GetRuntime().StartHeartbeat(
+            std::chrono::seconds(interval_seconds),
+            event_name,
+            component,
+            target_install_id
+        );
+    } catch (...) {
+        HandleApiException();
+    }
+    return started;
+}
+
+void FountainStopHeartbeat(void) {
+    try {
+        fountain::GetRuntime().StopHeartbeat();
     } catch (...) {
         HandleApiException();
     }

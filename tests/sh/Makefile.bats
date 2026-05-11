@@ -51,7 +51,19 @@ EOF
 #!/bin/bash
 exit 0
 EOF
-  chmod +x "${SANDBOX}/00_verify_requirements_traceability.sh" "${SANDBOX}/01_install_prerequisites.sh"
+  cat > "${SANDBOX}/02_start_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  cat > "${SANDBOX}/03_verify_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  cat > "${SANDBOX}/04_stop_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  chmod +x "${SANDBOX}/00_verify_requirements_traceability.sh" "${SANDBOX}/01_install_prerequisites.sh" "${SANDBOX}/02_start_heartbeat.sh" "${SANDBOX}/03_verify_heartbeat.sh" "${SANDBOX}/04_stop_heartbeat.sh"
 }
 
 @test "R001,R040: help lists required target entrypoints" {
@@ -100,7 +112,7 @@ EOF
   create_common_stubs
   run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
   [ "$status" -eq 0 ]
-  run rg "^shellcheck 00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh$" "${LOG_FILE}"
+  run rg "^shellcheck 00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh 02_start_heartbeat\\.sh 03_verify_heartbeat\\.sh 04_stop_heartbeat\\.sh$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^semgrep --config auto --error \\.$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
