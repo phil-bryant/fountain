@@ -16,3 +16,6 @@ cmake-build-*/
 tmp/
 *.sqlite3
 *.db
+
+#R020: Ignore local heartbeat runtime state directory and artifacts.
+.heartbeat/
