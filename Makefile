@@ -1,4 +1,5 @@
 BUILD_DIR ?= build
+SAST_BUILD_DIR ?= .build/sast
 BATS_CMD ?= bats
 RUN_EXECUTABLE ?= $(BUILD_DIR)/examples/cpp_basic/fountain_cpp_basic
 SEMGREP_CMD ?= semgrep
@@ -10,7 +11,8 @@ TOOL_KIND ?= SAST
 SAST_CLANG_TIDY_PER_FILE ?= 1
 GITLEAKS_CMD ?= gitleaks
 SHELLCHECK_CMD ?= shellcheck
-SHELL_SOURCES := 00_verify_requirements_traceability.sh 01_install_prerequisites.sh 02_start_heartbeat.sh 03_verify_heartbeat.sh 04_stop_heartbeat.sh
+SHELL_SOURCES := 00_verify_requirements_traceability.sh 01_install_prerequisites.sh 02_check_lints.sh \
+	03_run_unit_tests.sh 04_run_sast.sh 05_start_heartbeat.sh 06_verify_heartbeat.sh 07_stop_heartbeat.sh
 CPP_SOURCES := $(shell rg --files src --glob '*.cpp')
 CLEAN_PATHS := $(BUILD_DIR) .build CMakeCache.txt CMakeFiles
 
@@ -48,6 +50,10 @@ build:
 #R005: Test lane runs ctest and Bats tests.
 #R040: Test lane emits concise status output.
 test: build
+	@echo "[test] Ensuring test-enabled CMake configuration in $(BUILD_DIR)"
+	cmake -S . -B "$(BUILD_DIR)" -DFOUNTAIN_BUILD_TESTS=ON -DFOUNTAIN_BUILD_EXAMPLES=ON
+	@echo "[test] Rebuilding with test targets enabled"
+	cmake --build "$(BUILD_DIR)"
 	@echo "[test] Running ctest suite"
 	ctest --test-dir "$(BUILD_DIR)" --output-on-failure
 	@echo "[test] Running Bats suite" #R005 #R040
@@ -195,8 +201,8 @@ _sast_clang_tidy_report:
 	fi
 
 _sast_prepare_compile_db:
-	@echo "[lint:clang-tidy] Preparing CMake compile database in $(BUILD_DIR)"
-	cmake -S . -B "$(BUILD_DIR)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFOUNTAIN_BUILD_TESTS=OFF -DFOUNTAIN_BUILD_EXAMPLES=OFF
+	@echo "[lint:clang-tidy] Preparing CMake compile database in $(SAST_BUILD_DIR)"
+	cmake -S . -B "$(SAST_BUILD_DIR)" -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFOUNTAIN_BUILD_TESTS=OFF -DFOUNTAIN_BUILD_EXAMPLES=OFF
 
 #R055: Secrets lane runs gitleaks detection.
 #R047: SAST lane prints explanatory header before tool execution.

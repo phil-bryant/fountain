@@ -51,19 +51,33 @@ EOF
 #!/bin/bash
 exit 0
 EOF
-  cat > "${SANDBOX}/02_start_heartbeat.sh" <<'EOF'
+  cat > "${SANDBOX}/02_check_lints.sh" <<'EOF'
 #!/bin/bash
 exit 0
 EOF
-  cat > "${SANDBOX}/03_verify_heartbeat.sh" <<'EOF'
+  cat > "${SANDBOX}/03_run_unit_tests.sh" <<'EOF'
 #!/bin/bash
 exit 0
 EOF
-  cat > "${SANDBOX}/04_stop_heartbeat.sh" <<'EOF'
+  cat > "${SANDBOX}/04_run_sast.sh" <<'EOF'
 #!/bin/bash
 exit 0
 EOF
-  chmod +x "${SANDBOX}/00_verify_requirements_traceability.sh" "${SANDBOX}/01_install_prerequisites.sh" "${SANDBOX}/02_start_heartbeat.sh" "${SANDBOX}/03_verify_heartbeat.sh" "${SANDBOX}/04_stop_heartbeat.sh"
+  cat > "${SANDBOX}/05_start_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  cat > "${SANDBOX}/06_verify_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  cat > "${SANDBOX}/07_stop_heartbeat.sh" <<'EOF'
+#!/bin/bash
+exit 0
+EOF
+  chmod +x "${SANDBOX}/00_verify_requirements_traceability.sh" "${SANDBOX}/01_install_prerequisites.sh"
+  chmod +x "${SANDBOX}/02_check_lints.sh" "${SANDBOX}/03_run_unit_tests.sh" "${SANDBOX}/04_run_sast.sh"
+  chmod +x "${SANDBOX}/05_start_heartbeat.sh" "${SANDBOX}/06_verify_heartbeat.sh" "${SANDBOX}/07_stop_heartbeat.sh"
 }
 
 @test "R001,R040: help lists required target entrypoints" {
@@ -93,10 +107,23 @@ EOF
   create_common_stubs
   run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" test
   [ "$status" -eq 0 ]
+  run rg "^cmake -S \\. -B build -DFOUNTAIN_BUILD_TESTS=ON -DFOUNTAIN_BUILD_EXAMPLES=ON$" "${LOG_FILE}"
+  [ "$status" -eq 0 ]
   run rg "^ctest --test-dir build --output-on-failure$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^bats tests/sh/example.bats$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
+}
+
+@test "R015: _sast_prepare_compile_db uses isolated SAST build directory" {
+  #R015
+  create_common_stubs
+  run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" _sast_prepare_compile_db
+  [ "$status" -eq 0 ]
+  run rg "^cmake -S \\. -B \\.build/sast -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFOUNTAIN_BUILD_TESTS=OFF -DFOUNTAIN_BUILD_EXAMPLES=OFF$" "${LOG_FILE}"
+  [ "$status" -eq 0 ]
+  run rg "^cmake -S \\. -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DFOUNTAIN_BUILD_TESTS=OFF -DFOUNTAIN_BUILD_EXAMPLES=OFF$" "${LOG_FILE}"
+  [ "$status" -ne 0 ]
 }
 
 @test "R020: run fails with guidance when executable is missing" {
@@ -109,10 +136,14 @@ EOF
 
 @test "R030,R035,R045,R055: sast runs blocking security lanes" {
   #R030 #R035 #R045 #R055
+  local shell_sources
+  shell_sources="00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh 02_check_lints\\.sh"
+  shell_sources="${shell_sources} 03_run_unit_tests\\.sh 04_run_sast\\.sh 05_start_heartbeat\\.sh"
+  shell_sources="${shell_sources} 06_verify_heartbeat\\.sh 07_stop_heartbeat\\.sh"
   create_common_stubs
   run env PATH="${STUB_BIN}:/usr/bin:/bin" make -f "${SANDBOX}/Makefile" -C "${SANDBOX}" sast
   [ "$status" -eq 0 ]
-  run rg "^shellcheck 00_verify_requirements_traceability\\.sh 01_install_prerequisites\\.sh 02_start_heartbeat\\.sh 03_verify_heartbeat\\.sh 04_stop_heartbeat\\.sh$" "${LOG_FILE}"
+  run rg "^shellcheck ${shell_sources}$" "${LOG_FILE}"
   [ "$status" -eq 0 ]
   run rg "^semgrep --config auto --error \\.$" "${LOG_FILE}"
   [ "$status" -eq 0 ]

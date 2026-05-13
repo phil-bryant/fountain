@@ -12,7 +12,7 @@ Tests:
 
 R005  Statement: Run non-UI repository tests through the primary test lane.
 Design: `make test` depends on `build`, runs `ctest --test-dir build --output-on-failure`, then runs shell tests under
-`tests/sh`.
+`tests/sh`. Before `ctest`, it reconfigures `build` with `-DFOUNTAIN_BUILD_TESTS=ON -DFOUNTAIN_BUILD_EXAMPLES=ON` and rebuilds.
 Tests:
 - Run `make test` and verify CMake build executes, ctest exits zero, and Bats tests execute.
 - Force ctest failure and verify `make test` exits non-zero.
@@ -24,7 +24,8 @@ Tests:
 - Force `cmake --build build` to fail and verify `make build` exits non-zero.
 
 R015  Statement: Keep Makefile paths and artifact controls configurable through variables.
-Design: Define variables for build directory, test lanes, SAST tooling commands/checks, and run artifact paths near the file top.
+Design: Define variables for build directory, isolated SAST build directory, test lanes, SAST tooling commands/checks, and run
+artifact paths near the file top.
 Tests:
 - Verify target commands use declared variables instead of repeated hardcoded literals.
 
