@@ -1,0 +1,5 @@
+/Users/phil/local/src/fountain/.build/sast/CMakeFiles/fountain.dir
+/Users/phil/local/src/fountain/.build/sast/CMakeFiles/edit_cache.dir
+/Users/phil/local/src/fountain/.build/sast/CMakeFiles/rebuild_cache.dir
+/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-build/CMakeFiles/edit_cache.dir
+/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-build/CMakeFiles/rebuild_cache.dir

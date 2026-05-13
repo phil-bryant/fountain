@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/fountain_c_api.cpp.o -c /Users/phil/local/src/fountain/src/fountain_c_api.cpp",
+  "file": "/Users/phil/local/src/fountain/src/fountain_c_api.cpp",
+  "output": "CMakeFiles/fountain.dir/src/fountain_c_api.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/fountain_runtime.cpp.o -c /Users/phil/local/src/fountain/src/fountain_runtime.cpp",
+  "file": "/Users/phil/local/src/fountain/src/fountain_runtime.cpp",
+  "output": "CMakeFiles/fountain.dir/src/fountain_runtime.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/event_json_nlohmann.cpp.o -c /Users/phil/local/src/fountain/src/event_json_nlohmann.cpp",
+  "file": "/Users/phil/local/src/fountain/src/event_json_nlohmann.cpp",
+  "output": "CMakeFiles/fountain.dir/src/event_json_nlohmann.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/queue_repository.cpp.o -c /Users/phil/local/src/fountain/src/queue_repository.cpp",
+  "file": "/Users/phil/local/src/fountain/src/queue_repository.cpp",
+  "output": "CMakeFiles/fountain.dir/src/queue_repository.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/time_utils.cpp.o -c /Users/phil/local/src/fountain/src/time_utils.cpp",
+  "file": "/Users/phil/local/src/fountain/src/time_utils.cpp",
+  "output": "CMakeFiles/fountain.dir/src/time_utils.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/id_utils.cpp.o -c /Users/phil/local/src/fountain/src/id_utils.cpp",
+  "file": "/Users/phil/local/src/fountain/src/id_utils.cpp",
+  "output": "CMakeFiles/fountain.dir/src/id_utils.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/backoff.cpp.o -c /Users/phil/local/src/fountain/src/backoff.cpp",
+  "file": "/Users/phil/local/src/fountain/src/backoff.cpp",
+  "output": "CMakeFiles/fountain.dir/src/backoff.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/sqlite/db.cpp.o -c /Users/phil/local/src/fountain/src/sqlite/db.cpp",
+  "file": "/Users/phil/local/src/fountain/src/sqlite/db.cpp",
+  "output": "CMakeFiles/fountain.dir/src/sqlite/db.cpp.o"
+},
+{
+  "directory": "/Users/phil/local/src/fountain/.build/sast",
+  "command": "/usr/bin/c++  -I/Users/phil/local/src/fountain/include -I/Users/phil/local/src/fountain/src -I/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-src/include -std=c++17 -arch arm64 -o CMakeFiles/fountain.dir/src/sqlite/statement.cpp.o -c /Users/phil/local/src/fountain/src/sqlite/statement.cpp",
+  "file": "/Users/phil/local/src/fountain/src/sqlite/statement.cpp",
+  "output": "CMakeFiles/fountain.dir/src/sqlite/statement.cpp.o"
+}
+]

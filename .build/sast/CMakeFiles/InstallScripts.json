@@ -1,0 +1,8 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/phil/local/src/fountain/.build/sast/cmake_install.cmake",
+		"/Users/phil/local/src/fountain/.build/sast/_deps/nlohmann_json-build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

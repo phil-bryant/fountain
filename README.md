@@ -103,19 +103,19 @@ Stop when your app is shutting down:
 FountainStopHeartbeat();
 ```
 
-## Heartbeat Operator Flow (02 -> 03 -> 04)
+## Heartbeat Operator Flow (05 -> 06 -> 07)
 
 Use the numbered helper scripts to manage one-install heartbeat rollout state:
 
 ```bash
-# 02: start (starts heartbeat runner and writes state with heartbeat_enabled=1)
-./02_start_heartbeat.sh --install-id install-id-for-initial-rollout
+# 05: start (starts heartbeat runner and writes state with heartbeat_enabled=1)
+./05_start_heartbeat.sh --install-id install-id-for-initial-rollout
 
-# 03: verify (checks active process, rollout target, and queued heartbeat events)
-./03_verify_heartbeat.sh --expect-install-id install-id-for-initial-rollout
+# 06: verify (checks active process, rollout target, and queued heartbeat events)
+./06_verify_heartbeat.sh --expect-install-id install-id-for-initial-rollout
 
-# 04: stop (archives previous state and writes heartbeat_enabled=0)
-./04_stop_heartbeat.sh
+# 07: stop (archives previous state and writes heartbeat_enabled=0)
+./07_stop_heartbeat.sh
 ```
 
 Notes:
@@ -123,10 +123,10 @@ Notes:
 - Default state file path: `.heartbeat/heartbeat.state`
 - Default pid file path: `.heartbeat/heartbeat.pid`
 - Default heartbeat DB path: `.heartbeat/heartbeat.sqlite3`
-- `02_start_heartbeat.sh` supports overrides: `--interval-seconds`, `--event-name`, `--component`, `--state-file`
-- `02_start_heartbeat.sh` auto-builds `build/examples/cpp_basic/fountain_heartbeat_runner` when needed
-- `03_verify_heartbeat.sh` supports `--state-file` and optional `--expect-install-id`
-- `04_stop_heartbeat.sh` supports `--state-file` and `--archive-root` (defaults to `~/.Trash`)
+- `05_start_heartbeat.sh` supports overrides: `--interval-seconds`, `--event-name`, `--component`, `--state-file`
+- `05_start_heartbeat.sh` auto-builds `build/examples/cpp_basic/fountain_heartbeat_runner` when needed
+- `06_verify_heartbeat.sh` supports `--state-file` and optional `--expect-install-id`
+- `07_stop_heartbeat.sh` supports `--state-file` and `--archive-root` (defaults to `~/.Trash`)
 
 ## Safety and Runtime Behavior
 
