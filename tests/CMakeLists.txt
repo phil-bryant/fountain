@@ -4,6 +4,7 @@ add_executable(fountain_tests
     fountain_sqlite_tests.cpp
     fountain_batch_tests.cpp
     fountain_c_api_safety_tests.cpp
+    fountain_heartbeat_tests.cpp
 )
 
 target_include_directories(fountain_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -17,6 +17,8 @@ TEST(FountainCApiSafetyTests, NullInputSafetyDoesNotCrashAndReturnsFalseWhenAppl
     FountainMarkUploadBatchFailed(nullptr, 500, nullptr);
     FountainFreeUploadBatch(nullptr);
     FountainRunMaintenance();
+    EXPECT_TRUE(FountainStartHeartbeat(nullptr));
+    FountainStopHeartbeat();
 }
 
 TEST(FountainCApiSafetyTests, CreateUploadBatchNoRowsReturnsFalse) {

@@ -71,6 +71,62 @@ Key functions in `fountain.h`:
 - `FountainMarkUploadBatchFailed(batch_id, http_status, error_message)`
 - `FountainFreeUploadBatch(batch)`
 - `FountainRunMaintenance()`
+- `FountainStartHeartbeat(config_ptr)`
+- `FountainStopHeartbeat()`
+
+## Heartbeat Generator (Optional)
+
+Fountain now supports an optional heartbeat generator that logs a heartbeat event on a fixed interval.
+
+- Default interval: `900` seconds (`15` minutes)
+- Default event identity:
+  - `event_name`: `fountain.heartbeat`
+  - `component`: `fountain.runtime`
+- Rollout gate: set `target_install_id` to only emit heartbeat for one selected install initially.
+
+The scheduler uses standard C++ threading primitives and is portable across macOS, iOS, Windows, and Linux builds.
+
+Example:
+
+```c
+FountainHeartbeatConfig heartbeat = {0};
+heartbeat.interval_seconds = 900;
+heartbeat.event_name = "fountain.heartbeat";
+heartbeat.component = "fountain.runtime";
+heartbeat.target_install_id = "install-id-for-initial-rollout";
+FountainStartHeartbeat(&heartbeat);
+```
+
+Stop when your app is shutting down:
+
+```c
+FountainStopHeartbeat();
+```
+
+## Heartbeat Operator Flow (02 -> 03 -> 04)
+
+Use the numbered helper scripts to manage one-install heartbeat rollout state:
+
+```bash
+# 02: start (starts heartbeat runner and writes state with heartbeat_enabled=1)
+./02_start_heartbeat.sh --install-id install-id-for-initial-rollout
+
+# 03: verify (checks active process, rollout target, and queued heartbeat events)
+./03_verify_heartbeat.sh --expect-install-id install-id-for-initial-rollout
+
+# 04: stop (archives previous state and writes heartbeat_enabled=0)
+./04_stop_heartbeat.sh
+```
+
+Notes:
+
+- Default state file path: `.heartbeat/heartbeat.state`
+- Default pid file path: `.heartbeat/heartbeat.pid`
+- Default heartbeat DB path: `.heartbeat/heartbeat.sqlite3`
+- `02_start_heartbeat.sh` supports overrides: `--interval-seconds`, `--event-name`, `--component`, `--state-file`
+- `02_start_heartbeat.sh` auto-builds `build/examples/cpp_basic/fountain_heartbeat_runner` when needed
+- `03_verify_heartbeat.sh` supports `--state-file` and optional `--expect-install-id`
+- `04_stop_heartbeat.sh` supports `--state-file` and `--archive-root` (defaults to `~/.Trash`)
 
 ## Safety and Runtime Behavior
 
@@ -81,3 +137,62 @@ Key functions in `fountain.h`:
 ## Example
 
 See `examples/cpp_basic/main.cpp` for a complete configure -> log -> claim -> mark-success flow.
+
+## End-to-End Diagram
+
+```text
+BACKEND
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  ┌────────────────────────────┐        ┌──────────────────────────────────┐  │
+│  │           Valve            │        │             Manifold             │  │
+│  │                            │        │                                  │  │
+│  │ - runs after user sign-in  │        │ - verifies signature / credential│  │
+│  │ - verifies Account A access│        │ - derives tenant_id + install_id │  │
+│  │ - provisions per-tenant /  │        │   from credential                │  │
+│  │   per-install credential   │        │ - stores tenant-scoped events    │  │
+│  │ - rotates / revokes creds  │        │ - rejects tenant mismatches      │  │
+│  └─────────────┬──────────────┘        │                                  │  │
+│                │                       │  ┌───────────────────────┐       │  │
+│                │                       │  │ Ingest Endpoint       │       │  │
+│                │                 ┌─────┼─►│ POST /v1/events/batch │       │  │
+│                │                 │     │  └───────────────────────┘       │  │
+│                │                 │     │                                  │  │
+│                │                 │     └──────────────────────┬───────────┘  │
+│                │                 │                            │              │
+└────────────────┼─────────────────┼────────────────────────────┼──────────────┘
+                 │                 │                            │
+                 │                 │                            │ tenant-scoped
+                 │                 │                            │ events
+                 │ credential      │             NOC/SOC        ▼
+                 │ for Account A   │             ┌──────────────────────────┐
+                 │ + Install 123   │             │          Vortex          │
+                 │                 │             │                          │
+                 │                 │             │ - downstream all-in-one  │
+                 │                 │             │ - storage / analytics    │
+                 │                 │             │ - dashboards / alerts    │
+                 │                 │             │ - incident review        │
+    credential   │                 │             │ - strict tenant_id reads │
+    provisioned  │                 │             └──────────────────────────┘
+   after sign-in │                 │
+                 │                 │ HTTPS + signed batch
+                 │                 │ credential proves Account A + Install 123
+CUSTOMER DEVICE  ▼                 │
+┌──────────────────────────────────┼─────────┐
+│                                  │         │
+│  ┌────────────────────┐   ┌─────────────┐  │
+│  │      Fountain      │   │   Piston    │  │
+│  │                    │   │             │  │
+│  │ - C++ event logger │   │ - Swift     │  │
+│  │ - SQLite queue     │   │   uploader  │  │
+│  │ - tags events with │   │ - stores    │  │
+│  │   tenant_scope     │   │   credential│  │
+│  └─────────┬──────────┘   │ - claims    │  │
+│            │              │   matching  │  │
+│            │ Account A    │   scope     │  │
+│            │ events       │ - signs     │  │
+│            └─────────────►│   uploads   │  │
+│                           └─────────────┘  │
+│                                            │
+└────────────────────────────────────────────┘
+```

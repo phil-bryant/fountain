@@ -7,3 +7,9 @@
   #R015: Local scratch SQLite artifacts are ignored.
   [ 1 -eq 1 ]
 }
+
+@test "R020: heartbeat runtime paths are ignored" {
+  #R020: Local heartbeat runtime state directory and artifacts are ignored.
+  run git check-ignore --no-index -q ".heartbeat/heartbeat.state"
+  [ "$status" -eq 0 ]
+}
